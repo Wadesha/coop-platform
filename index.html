@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>丰禾农业合作社管理平台</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+  :root{
+    --bg:#0e1116; --panel:#161b22; --panel2:#1c2330; --panel3:#222b38;
+    --border:#262f3b; --text:#e6edf3; --muted:#8b949e; --muted2:#6a7480;
+    --green:#3fb950; --green2:#2ea043; --green-d:#16341f;
+    --amber:#d29922; --red:#f85149; --blue:#58a6ff; --purple:#bc8cff;
+    --teal:#39c5cf;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+    background:var(--bg);color:var(--text);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+  a{color:inherit;text-decoration:none}
+  ::-webkit-scrollbar{width:8px;height:8px}
+  ::-webkit-scrollbar-thumb{background:#2c3744;border-radius:4px}
+  ::-webkit-scrollbar-track{background:transparent}
+
+  .app{display:flex;height:100vh;overflow:hidden}
+  /* Sidebar */
+  .sidebar{width:230px;flex-shrink:0;background:var(--panel);border-right:1px solid var(--border);
+    display:flex;flex-direction:column}
+  .brand{padding:18px 18px 14px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border)}
+  .brand .logo{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,var(--green),var(--teal));
+    display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+  .brand .name{font-weight:700;font-size:15px;letter-spacing:.3px}
+  .brand .sub{font-size:11px;color:var(--muted);margin-top:1px}
+  .nav{padding:10px 10px;flex:1;overflow-y:auto}
+  .nav-group{font-size:11px;color:var(--muted2);text-transform:uppercase;letter-spacing:.8px;
+    padding:12px 10px 6px}
+  .nav-item{display:flex;align-items:center;gap:10px;padding:9px 11px;border-radius:8px;color:var(--muted);
+    cursor:pointer;font-size:13.5px;margin-bottom:2px;transition:.15s;user-select:none}
+  .nav-item:hover{background:var(--panel2);color:var(--text)}
+  .nav-item.active{background:var(--green-d);color:var(--green);font-weight:600}
+  .nav-item .ico{width:18px;text-align:center;font-size:15px}
+  .side-foot{padding:12px 16px;border-top:1px solid var(--border);font-size:11px;color:var(--muted2)}
+
+  /* Main */
+  .main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+  .topbar{height:58px;flex-shrink:0;border-bottom:1px solid var(--border);background:var(--panel);
+    display:flex;align-items:center;padding:0 22px;gap:16px}
+  .page-title{font-size:17px;font-weight:700}
+  .page-sub{font-size:12px;color:var(--muted);margin-top:1px}
+  .top-search{flex:1;max-width:340px;margin-left:auto;position:relative}
+  .top-search input{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;
+    padding:8px 12px 8px 32px;color:var(--text);font-size:13px;outline:none}
+  .top-search input:focus{border-color:var(--green)}
+  .top-search .si{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--muted)}
+  .top-user{display:flex;align-items:center;gap:9px;padding-left:6px}
+  .top-user .av{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--purple),var(--blue));
+    display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:#fff}
+  .top-user .un{font-size:13px;font-weight:600}
+  .top-user .ur{font-size:11px;color:var(--muted)}
+
+  .content{flex:1;overflow-y:auto;padding:22px}
+  .view{display:none}
+  .view.active{display:block;animation:fade .25s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+  /* Cards */
+  .kpi-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:18px}
+  .kpi{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:15px 16px;position:relative;overflow:hidden}
+  .kpi .lab{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:7px}
+  .kpi .val{font-size:25px;font-weight:700;margin-top:8px;letter-spacing:.5px}
+  .kpi .val small{font-size:13px;color:var(--muted);font-weight:500;margin-left:3px}
+  .kpi .chg{font-size:11.5px;margin-top:5px}
+  .up{color:var(--green)}.down{color:var(--red)}
+  .kpi .bar{position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--green)}
+
+  .panel{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:16px 18px;margin-bottom:16px}
+  .panel h3{font-size:14px;font-weight:700;margin-bottom:4px;display:flex;align-items:center;gap:8px}
+  .panel .ph-sub{font-size:12px;color:var(--muted);margin-bottom:14px}
+  .charts-2{display:grid;grid-template-columns:1.4fr 1fr;gap:16px}
+  .chart-box{height:260px;position:relative}
+
+  .row{display:flex;align-items:center;gap:10px}
+  .spread{justify-content:space-between}
+  .btn{background:var(--panel2);border:1px solid var(--border);color:var(--text);padding:7px 14px;
+    border-radius:8px;cursor:pointer;font-size:13px;display:inline-flex;align-items:center;gap:6px;transition:.15s}
+  .btn:hover{border-color:var(--muted)}
+  .btn.primary{background:var(--green2);border-color:var(--green2);color:#fff;font-weight:600}
+  .btn.primary:hover{background:var(--green)}
+  .btn.ghost{background:transparent}
+  .btn.sm{padding:5px 10px;font-size:12px}
+  .btn.danger{color:var(--red);border-color:#3a2326}
+  .btn.danger:hover{background:#2a1719}
+
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--border)}
+  th{color:var(--muted);font-weight:600;font-size:12px;background:var(--panel2);position:sticky;top:0}
+  tbody tr:hover{background:var(--panel2)}
+  td .mono{font-variant-numeric:tabular-nums}
+  .tag{display:inline-block;padding:2px 9px;border-radius:20px;font-size:11.5px;font-weight:600;white-space:nowrap}
+  .tag.g{background:var(--green-d);color:var(--green)}
+  .tag.b{background:#0d2438;color:var(--blue)}
+  .tag.a{background:#352a10;color:var(--amber)}
+  .tag.r{background:#2a1719;color:var(--red)}
+  .tag.p{background:#2a1d3a;color:var(--purple)}
+  .tag.t{background:#0c2e30;color:var(--teal)}
+  .row-actions{display:flex;gap:6px}
+  .icon-btn{background:var(--panel2);border:1px solid var(--border);border-radius:6px;width:28px;height:28px;
+    display:inline-flex;align-items:center;justify-content:center;cursor:pointer;color:var(--muted);font-size:13px}
+  .icon-btn:hover{color:var(--text);border-color:var(--muted)}
+
+  .table-wrap{max-height:520px;overflow:auto;border:1px solid var(--border);border-radius:10px}
+  .table-wrap table th{position:sticky;top:0;z-index:2}
+
+  .filters{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center}
+  .filters select,.filters input{background:var(--bg);border:1px solid var(--border);color:var(--text);
+    padding:7px 10px;border-radius:8px;font-size:12.5px;outline:none}
+  .filters select:focus,.filters input:focus{border-color:var(--green)}
+
+  /* Modal */
+  .modal-mask{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center;z-index:50}
+  .modal-mask.show{display:flex}
+  .modal{background:var(--panel);border:1px solid var(--border);border-radius:14px;width:480px;max-width:94vw;
+    max-height:90vh;overflow:auto;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+  .modal-h{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+  .modal-h h3{font-size:15px;font-weight:700}
+  .modal-b{padding:18px 20px}
+  .modal-f{padding:14px 20px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:10px}
+  .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:13px}
+  .field{display:flex;flex-direction:column;gap:5px}
+  .field.full{grid-column:1/-1}
+  .field label{font-size:12px;color:var(--muted)}
+  .field input,.field select,.field textarea{background:var(--bg);border:1px solid var(--border);color:var(--text);
+    padding:9px 11px;border-radius:8px;font-size:13px;outline:none;font-family:inherit}
+  .field input:focus,.field select:focus,.field textarea:focus{border-color:var(--green)}
+  .close-x{background:transparent;border:none;color:var(--muted);font-size:20px;cursor:pointer;line-height:1}
+  .close-x:hover{color:var(--text)}
+
+  /* Stat tiles for finance */
+  .stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:16px}
+  .stat{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:15px 16px}
+  .stat .lab{font-size:12px;color:var(--muted)}
+  .stat .val{font-size:22px;font-weight:700;margin-top:6px}
+  .div-box{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:18px;margin-top:4px}
+  .div-row{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px dashed var(--border);font-size:13px}
+  .div-row:last-child{border-bottom:none}
+  .div-row .amt{font-weight:700;color:var(--green)}
+  .note{font-size:12px;color:var(--muted);line-height:1.6}
+  .seg{display:inline-flex;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:3px;gap:3px}
+  .seg button{background:transparent;border:none;color:var(--muted);padding:6px 14px;border-radius:6px;cursor:pointer;font-size:12.5px}
+  .seg button.on{background:var(--green2);color:#fff;font-weight:600}
+  .empty{padding:30px;text-align:center;color:var(--muted);font-size:13px}
+  .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--panel3);
+    border:1px solid var(--border);color:var(--text);padding:11px 20px;border-radius:10px;font-size:13px;
+    opacity:0;transition:.3s;z-index:99;box-shadow:0 10px 30px rgba(0,0,0,.4)}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  .legend-inline{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-top:8px}
+  .legend-inline span{display:inline-flex;align-items:center;gap:5px}
+  .legend-inline i{width:10px;height:10px;border-radius:3px;display:inline-block}
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="logo">🌾</div>
+      <div>
+        <div class="name">丰禾合作社</div>
+        <div class="sub"> cooperative OS</div>
+      </div>
+    </div>
+    <nav class="nav" id="nav">
+      <div class="nav-group">经营总览</div>
+      <div class="nav-item active" data-view="dashboard"><span class="ico">📊</span>仪表盘</div>
+      <div class="nav-item" data-view="analytics"><span class="ico">📈</span>数据看板</div>
+      <div class="nav-group">人员与资产</div>
+      <div class="nav-item" data-view="members"><span class="ico">👥</span>社员管理</div>
+      <div class="nav-item" data-view="lands"><span class="ico">🗺️</span>地块与种植</div>
+      <div class="nav-item" data-view="inventory"><span class="ico">📦</span>库存物资</div>
+      <div class="nav-group">业务流转</div>
+      <div class="nav-item" data-view="procure"><span class="ico">🚚</span>农资采购</div>
+      <div class="nav-item" data-view="sales"><span class="ico">💰</span>销售订单</div>
+      <div class="nav-item" data-view="finance"><span class="ico">🧮</span>财务与分红</div>
+    </nav>
+    <div class="side-foot">丰禾农业专业合作社 · 示范版本<br>数据存于本地浏览器</div>
+  </aside>
+
+  <!-- Main -->
+  <div class="main">
+    <header class="topbar">
+      <div>
+        <div class="page-title" id="pageTitle">仪表盘</div>
+        <div class="page-sub" id="pageSub">合作社整体经营态势一览</div>
+      </div>
+      <div class="top-search">
+        <span class="si">🔍</span>
+        <input id="globalSearch" placeholder="搜索社员 / 地块 / 订单…" />
+      </div>
+      <div class="top-user">
+        <div class="av">张</div>
+        <div>
+          <div class="un">张建国</div>
+          <div class="ur">理事长</div>
+        </div>
+      </div>
+    </header>
+
+    <div class="content">
+      <!-- DASHBOARD -->
+      <section class="view active" id="view-dashboard"></section>
+      <!-- ANALYTICS -->
+      <section class="view" id="view-analytics"></section>
+      <!-- MEMBERS -->
+      <section class="view" id="view-members"></section>
+      <!-- LANDS -->
+      <section class="view" id="view-lands"></section>
+      <!-- INVENTORY -->
+      <section class="view" id="view-inventory"></section>
+      <!-- PROCURE -->
+      <section class="view" id="view-procure"></section>
+      <!-- SALES -->
+      <section class="view" id="view-sales"></section>
+      <!-- FINANCE -->
+      <section class="view" id="view-finance"></section>
+    </div>
+  </div>
+</div>
+
+<!-- Modal -->
+<div class="modal-mask" id="modalMask">
+  <div class="modal">
+    <div class="modal-h"><h3 id="modalTitle">新增</h3><button class="close-x" onclick="closeModal()">×</button></div>
+    <div class="modal-b" id="modalBody"></div>
+    <div class="modal-f">
+      <button class="btn ghost" onclick="closeModal()">取消</button>
+      <button class="btn primary" id="modalSave">保存</button>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============ Data Layer ============ */
+const KEY='coop_v1_';
+const uid=()=>'id'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+function load(name,seed){try{const s=localStorage.getItem(KEY+name);if(s)return JSON.parse(s);}catch(e){}
+  localStorage.setItem(KEY+name,JSON.stringify(seed));return seed;}
+function save(name,data){localStorage.setItem(KEY+name,JSON.stringify(data));}
+
+let members=load('members',[
+  {id:uid(),name:'张建国',phone:'13805391234',role:'理事长',shares:50000,join:'2021-03-12',status:'在职'},
+  {id:uid(),name:'李秀兰',phone:'13905397788',role:'监事',shares:20000,join:'2021-03-12',status:'在职'},
+  {id:uid(),name:'王富贵',phone:'13705391222',role:'社员',shares:10000,join:'2021-05-20',status:'在职'},
+  {id:uid(),name:'赵明',phone:'13605394567',role:'社员',shares:12000,join:'2021-06-01',status:'在职'},
+  {id:uid(),name:'孙强',phone:'13505398899',role:'社员',shares:8000,join:'2022-02-14',status:'在职'},
+  {id:uid(),name:'周伟',phone:'13405392345',role:'社员',shares:15000,join:'2022-03-10',status:'在职'},
+  {id:uid(),name:'陈红',phone:'13305395555',role:'社员',shares:6000,join:'2022-07-22',status:'在职'},
+  {id:uid(),name:'刘军',phone:'13205393333',role:'社员',shares:9000,join:'2023-01-09',status:'退社'},
+]);
+let lands=load('lands',[
+  {id:uid(),name:'东岭一号地',area:120,county:'临沭县',crop:'小麦',owner:'张建国',status:'种植中'},
+  {id:uid(),name:'西河洼地',area:80,county:'临沭县',crop:'玉米',owner:'王富贵',status:'休耕'},
+  {id:uid(),name:'南坡梯田',area:45,county:'莒南县',crop:'茶叶',owner:'李秀兰',status:'种植中'},
+  {id:uid(),name:'北园大棚',area:30,county:'莒南县',crop:'蔬菜',owner:'赵明',status:'种植中'},
+  {id:uid(),name:'水库鱼池',area:50,county:'临沭县',crop:'水产',owner:'孙强',status:'养殖中'},
+  {id:uid(),name:'坡地果园',area:60,county:'郯城县',crop:'苹果',owner:'周伟',status:'种植中'},
+  {id:uid(),name:'河东菜地',area:25,county:'郯城县',crop:'蔬菜',owner:'陈红',status:'种植中'},
+]);
+let inventory=load('inventory',[
+  {id:uid(),name:'复合肥',cat:'化肥',qty:3.2,unit:'吨',threshold:2},
+  {id:uid(),name:'小麦种子',cat:'种子',qty:800,unit:'kg',threshold:500},
+  {id:uid(),name:'玉米种子',cat:'种子',qty:320,unit:'kg',threshold:300},
+  {id:uid(),name:'草甘膦',cat:'农药',qty:120,unit:'L',threshold:50},
+  {id:uid(),name:'地膜',cat:'资材',qty:40,unit:'卷',threshold:20},
+  {id:uid(),name:'有机肥',cat:'化肥',qty:1.4,unit:'吨',threshold:2},
+  {id:uid(),name:'杀虫剂',cat:'农药',qty:38,unit:'L',threshold:40},
+]);
+let procure=load('procure',[
+  {id:uid(),supplier:'临沭农资公司',item:'复合肥',qty:5,unit:'吨',amount:18000,date:'2026-03-01',status:'已入库'},
+  {id:uid(),name:'鲁南种业',item:'小麦种子',qty:3000,unit:'kg',amount:12000,date:'2026-02-20',status:'已入库'},
+  {id:uid(),name:'绿野农化',item:'草甘膦',qty:200,unit:'L',amount:9000,date:'2026-04-05',status:'已入库'},
+  {id:uid(),name:'莒南薄膜厂',item:'地膜',qty:50,unit:'卷',amount:6500,date:'2026-03-18',status:'已入库'},
+  {id:uid(),name:'临沭农机社',item:'农机租赁',qty:1,unit:'季',amount:15000,date:'2026-04-12',status:'待付款'},
+  {id:uid(),name:'鲁南种业',item:'玉米种子',qty:1500,unit:'kg',amount:6000,date:'2026-05-02',status:'已入库'},
+]);
+let sales=load('sales',[
+  {id:uid(),customer:'临沂批发市场',product:'小麦',qty:60,unit:'吨',price:2680,date:'2026-06-15',status:'已完成'},
+  {id:uid(),customer:'本地连锁超市',product:'蔬菜',qty:22,unit:'吨',price:4200,date:'2026-05-20',status:'已完成'},
+  {id:uid(),customer:'鲁南粮库',product:'玉米',qty:45,unit:'吨',price:2520,date:'2026-06-28',status:'已完成'},
+  {id:uid(),customer:'县城茶庄',product:'茶叶',qty:1.2,unit:'吨',price:38000,date:'2026-05-08',status:'已完成'},
+  {id:uid(),customer:'水产收购商',product:'水产',qty:18,unit:'吨',price:9600,date:'2026-06-10',status:'已完成'},
+  {id:uid(),customer:'果汁加工厂',product:'苹果',qty:30,unit:'吨',price:3100,date:'2026-07-02',status:'待发货'},
+  {id:uid(),customer:'临沂批发市场',product:'蔬菜',qty:15,unit:'吨',price:4300,date:'2026-07-12',status:'已完成'},
+  {id:uid(),customer:'周边农户团购',product:'苹果',qty:8,unit:'吨',price:3300,date:'2026-07-20',status:'已完成'},
+]);
+
+/* ============ Helpers ============ */
+const $=s=>document.querySelector(s);
+const $$=s=>document.querySelectorAll(s);
+const fmt=n=>n.toLocaleString('zh-CN');
+const sum=(a,f)=>a.reduce((s,x)=>s+f(x),0);
+function toast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),1800);}
+const charts={};
+function drawChart(id,cfg){if(charts[id])charts[id].destroy();const ctx=document.getElementById(id);if(!ctx)return;charts[id]=new Chart(ctx,cfg);}
+
+const TITLES={
+  dashboard:['仪表盘','合作社整体经营态势一览'],
+  analytics:['数据看板','作物、县域与收支的多维分析'],
+  members:['社员管理','成员档案、股权与状态维护'],
+  lands:['地块与种植','在管地块、作物与负责人'],
+  inventory:['库存物资','农资库存与低库存预警'],
+  procure:['农资采购','供应商、采购单与付款状态'],
+  sales:['销售订单','客户、销售单与回款状态'],
+  finance:['财务与分红','收支流水与年度分红测算'],
+};
+
+/* ============ Navigation ============ */
+const VIEWS={
+  dashboard:renderDashboard, analytics:renderAnalytics, members:renderMembers,
+  lands:renderLands, inventory:renderInventory, procure:renderProcure,
+  sales:renderSales, finance:renderFinance
+};
+function navigate(v){
+  $$('.nav-item').forEach(n=>n.classList.toggle('active',n.dataset.view===v));
+  $$('.view').forEach(s=>s.classList.remove('active'));
+  $('#view-'+v).classList.add('active');
+  $('#pageTitle').textContent=TITLES[v][0];
+  $('#pageSub').textContent=TITLES[v][1];
+  VIEWS[v]();
+  window.scrollTo(0,0);
+}
+$$('.nav-item').forEach(n=>n.addEventListener('click',()=>navigate(n.dataset.view)));
+$('#globalSearch').addEventListener('input',e=>{
+  const q=e.target.value.trim().toLowerCase();
+  if(!q)return;
+  // quick jump: match member/land/sales
+  const inM=members.find(m=>m.name.toLowerCase().includes(q));
+  const inL=lands.find(l=>l.name.toLowerCase().includes(q)||l.county.toLowerCase().includes(q));
+  const inS=sales.find(s=>s.customer.toLowerCase().includes(q)||s.product.toLowerCase().includes(q));
+  if(inM)navigate('members');else if(inL)navigate('lands');else if(inS)navigate('sales');
+});
+
+/* ============ Modal ============ */
+let modalCtx=null;
+function openModal(title,bodyHtml,ctx){modalCtx=ctx;$('#modalTitle').textContent=title;$('#modalBody').innerHTML=bodyHtml;$('#modalMask').classList.add('show');}
+function closeModal(){$('#modalMask').classList.remove('show');modalCtx=null;}
+$('#modalMask').addEventListener('click',e=>{if(e.target===$('#modalMask'))closeModal();});
+
+/* ============ DASHBOARD ============ */
+function renderDashboard(){
+  const activeMembers=members.filter(m=>m.status==='在职').length;
+  const totalArea=sum(lands,l=>l.area);
+  const income=sum(sales,s=>s.amount=s.qty*s.price);
+  const expense=sum(procure,p=>p.amount);
+  const profit=income-expense;
+  const lowStock=inventory.filter(i=>i.qty<=i.threshold).length;
+  const v=$('#view-dashboard');
+  v.innerHTML=`
+  <div class="kpi-grid">
+    <div class="kpi"><div class="bar"></div><div class="lab">📋 在册社员</div><div class="val">${activeMembers}<small>人</small></div><div class="chg up">▲ 出资总额 ¥${fmt(sum(members,m=>m.shares))}</div></div>
+    <div class="kpi"><div class="bar" style="background:var(--teal)"></div><div class="lab">🗺️ 在管面积</div><div class="val">${totalArea}<small>亩</small></div><div class="chg">▲ ${lands.length} 个地块</div></div>
+    <div class="kpi"><div class="bar" style="background:var(--blue)"></div><div class="lab">💰 销售总额</div><div class="val">¥${fmt(Math.round(income))}</div><div class="chg up">▲ 本年累计</div></div>
+    <div class="kpi"><div class="bar" style="background:var(--amber)"></div><div class="lab">🧮 经营利润</div><div class="val">¥${fmt(Math.round(profit))}</div><div class="chg ${profit>0?'up':'down'}">${profit>0?'▲ 盈余':'▼ 亏损'}</div></div>
+    <div class="kpi"><div class="bar" style="background:${lowStock?'var(--red)':'var(--green)'}"></div><div class="lab">⚠️ 库存预警</div><div class="val">${lowStock}<small>项</small></div><div class="chg ${lowStock?'down':'up'}">${lowStock?'需补货':'库存健康'}</div></div>
+  </div>
+  <div class="charts-2">
+    <div class="panel">
+      <h3>📈 月度销售趋势</h3>
+      <div class="ph-sub">本年各月销售额与采购支出（万元）</div>
+      <div class="chart-box"><canvas id="dashTrend"></canvas></div>
+    </div>
+    <div class="panel">
+      <h3>🌱 作物面积分布</h3>
+      <div class="ph-sub">按种植作物聚合在管面积</div>
+      <div class="chart-box"><canvas id="dashCrop"></canvas></div>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="row spread"><h3>📋 近期业务动态</h3><span class="note">采购 ${procure.length} 单 · 销售 ${sales.length} 单</span></div>
+    <div class="table-wrap" style="margin-top:12px;border:none">
+      <table>
+        <thead><tr><th>类型</th><th>对象</th><th>内容</th><th>金额</th><th>日期</th><th>状态</th></tr></thead>
+        <tbody id="dashFeed"></tbody>
+      </table>
+    </div>
+  </div>`;
+  // feed
+  const feed=[...procure.map(p=>({t:'采购',o:p.supplier,c:p.item,a:p.amount,d:p.date,s:p.status,cls:'b'})),
+              ...sales.map(s=>({t:'销售',o:s.customer,c:s.product,a:s.amount,d:s.date,s:s.status,cls:'g'}))];
+  feed.sort((a,b)=>b.d.localeCompare(a.d));
+  $('#dashFeed').innerHTML=feed.slice(0,8).map(r=>`<tr>
+    <td><span class="tag ${r.cls}">${r.t}</span></td><td>${r.o}</td><td>${r.c}</td>
+    <td class="mono">¥${fmt(Math.round(r.a))}</td><td>${r.d}</td><td>${statusTag(r.s)}</td></tr>`).join('');
+  // trend chart (monthly)
+  const months=['01','02','03','04','05','06','07','08'];
+  const labels=months.map(m=>'2026-'+m);
+  const salByM=months.map(m=>sum(sales.filter(s=>s.date.slice(5,7)===m),s=>s.qty*s.price)/10000);
+  const proByM=months.map(m=>sum(procure.filter(p=>p.date.slice(5,7)===m),p=>p.amount)/10000);
+  drawChart('dashTrend',{type:'bar',data:{labels:labels,datasets:[
+    {label:'销售额',data:salByM.map(x=>Math.round(x*10)/10),backgroundColor:'#2ea043',borderRadius:5},
+    {label:'采购支出',data:proByM.map(x=>Math.round(x*10)/10),backgroundColor:'#bc8cff',borderRadius:5}
+  ]},options:chartOpts()});
+  // crop doughnut
+  const cropMap={};lands.forEach(l=>cropMap[l.crop]=(cropMap[l.crop]||0)+l.area);
+  drawChart('dashCrop',{type:'doughnut',data:{labels:Object.keys(cropMap),
+    datasets:[{data:Object.values(cropMap),backgroundColor:['#3fb950','#39c5cf','#d29922','#bc8cff','#58a6ff','#f0883e']}]},
+    options:{...chartOpts(true),cutout:'62%'}});
+}
+function statusTag(s){
+  const map={'在职':'g','退社':'r','种植中':'g','休耕':'a','养殖中':'t','已完成':'g','待发货':'a','已入库':'g','待付款':'r','进行中':'b'};
+  return `<span class="tag ${map[s]||'b'}">${s}</span>`;
+}
+function chartOpts(doughnut){
+  return {responsive:true,maintainAspectRatio:false,plugins:{legend:{display:doughnut,
+    position:'bottom',labels:{color:'#8b949e',boxWidth:12,padding:14}},
+    tooltip:{backgroundColor:'#222b38',borderColor:'#262f3b',borderWidth:1,padding:10,titleColor:'#e6edf3',bodyColor:'#e6edf3'}},
+    scales:doughnut?{}:{x:{grid:{color:'#1c2330'},ticks:{color:'#8b949e'}},y:{grid:{color:'#1c2330'},ticks:{color:'#8b949e'}}}};
+}
+
+/* ============ ANALYTICS ============ */
+function renderAnalytics(){
+  const v=$('#view-analytics');
+  v.innerHTML=`
+  <div class="panel">
+    <h3>🌱 县域作物分布</h3>
+    <div class="ph-sub">按县聚合在管面积与作物类型</div>
+    <div class="chart-box" style="height:300px"><canvas id="anCounty"></canvas></div>
+  </div>
+  <div class="charts-2">
+    <div class="panel">
+      <h3>💰 收支对比</h3>
+      <div class="ph-sub">采购支出 vs 销售收入的累计结构</div>
+      <div class="chart-box"><canvas id="anIncExp"></canvas></div>
+    </div>
+    <div class="panel">
+      <h3>👥 社员股权结构</h3>
+      <div class="ph-sub">按角色聚合出资额（万元）</div>
+      <div class="chart-box"><canvas id="anShares"></canvas></div>
+    </div>
+  </div>
+  <div class="panel">
+    <h3>📦 库存余量预警</h3>
+    <div class="ph-sub">低于阈值（红线）的物资需及时补货</div>
+    <div class="chart-box" style="height:240px"><canvas id="anInv"></canvas></div>
+  </div>`;
+  // county stacked
+  const counties=[...new Set(lands.map(l=>l.county))];
+  const crops=[...new Set(lands.map(l=>l.crop))];
+  const palette=['#3fb950','#39c5cf','#d29922','#bc8cff','#58a6ff','#f0883e','#db61a2'];
+  const countyData=crops.map((c,i)=>({label:c,data:counties.map(co=>sum(lands.filter(l=>l.county===co&&l.crop===c),l=>l.area)),
+    backgroundColor:palette[i%palette.length]}));
+  drawChart('anCounty',{type:'bar',data:{labels:counties,datasets:countyData},
+    options:{...chartOpts(),scales:{x:{stacked:true,grid:{color:'#1c2330'},ticks:{color:'#8b949e'}},y:{stacked:true,grid:{color:'#1c2330'},ticks:{color:'#8b949e'}}}}});
+  // income vs expense doughnut by product category
+  const expTotal=sum(procure,p=>p.amount), incTotal=sum(sales,s=>s.qty*s.price);
+  drawChart('anIncExp',{type:'doughnut',data:{labels:['销售收入','采购支出'],
+    datasets:[{data:[Math.round(incTotal),Math.round(expTotal)],backgroundColor:['#2ea043','#bc8cff']}]},
+    options:{...chartOpts(true),cutout:'60%'}});
+  // shares by role
+  const roles=[...new Set(members.map(m=>m.role))];
+  drawChart('anShares',{type:'bar',data:{labels:roles,datasets:[{label:'出资(万)',
+    data:roles.map(r=>Math.round(sum(members.filter(m=>m.role===r),m=>m.shares)/10000*10)/10),backgroundColor:'#58a6ff',borderRadius:5}]},
+    options:{...chartOpts(),plugins:{legend:{display:false},tooltip:chartOpts().plugins.tooltip}}});
+  // inventory bars with threshold
+  drawChart('anInv',{type:'bar',data:{labels:inventory.map(i=>i.name),datasets:[
+    {label:'当前库存',data:inventory.map(i=>i.qty),backgroundColor:inventory.map(i=>i.qty<=i.threshold?'#f85149':'#3fb950'),borderRadius:4},
+    {label:'预警阈值',data:inventory.map(i=>i.threshold),backgroundColor:'#3a2326',borderRadius:4}
+  ]},options:{...chartOpts(),scales:{x:{grid:{color:'#1c2330'},ticks:{color:'#8b949e'}},y:{grid:{color:'#1c2330'},ticks:{color:'#8b949e'}}}}});
+}
+
+/* ============ Generic CRUD Table Renderer ============ */
+function tableHeader(cols){return '<tr>'+cols.map(c=>`<th>${c}</th>`).join('')+'</tr>';}
+function field(label,key,type,opts){opts=opts||{};
+  const req=opts.required?'required':'';
+  let el;
+  if(type==='select'){
+    el=`<select name="${key}">${opts.options.map(o=>`<option value="${o}" ${opts.val===o?'selected':''}>${o}</option>`).join('')}</select>`;
+  }else if(type==='textarea'){
+    el=`<textarea name="${key}" ${req} placeholder="${opts.ph||''}">${opts.val||''}</textarea>`;
+  }else{
+    el=`<input name="${key}" type="${type}" value="${opts.val||''}" ${req} placeholder="${opts.ph||''}" />`;
+  }
+  return `<div class="field ${opts.full?'full':''}"><label>${label}</label>${el}</div>`;
+}
+function modalForm(fieldsArr){return `<form id="mForm" class="form-grid">${fieldsArr.join('')}</form>`;}
+function readForm(){const f=$('#mForm');const o={};new FormData(f).forEach((v,k)=>o[k]=v);return o;}
+
+/* ============ MEMBERS ============ */
+function renderMembers(){
+  const v=$('#view-members');
+  v.innerHTML=`
+  <div class="panel">
+    <div class="row spread"><div><h3>👥 社员名册</h3><div class="ph-sub">共 ${members.length} 人，在册 ${members.filter(m=>m.status==='在职').length} 人</div></div>
+      <button class="btn primary" onclick="addMember()">＋ 新增社员</button></div>
+    <div class="filters">
+      <select id="mFilterRole"><option value="">全部角色</option>${[...new Set(members.map(m=>m.role))].map(r=>`<option>${r}</option>`).join('')}</select>
+      <select id="mFilterStatus"><option value="">全部状态</option><option>在职</option><option>退社</option></select>
+    </div>
+    <div class="table-wrap"><table><thead>${tableHeader(['姓名','电话','角色','出资额(元)','入社日期','状态','操作'])}</thead>
+      <tbody id="mBody"></tbody></table></div>
+  </div>`;
+  $('#mFilterRole').onchange=drawM;$('#mFilterStatus').onchange=drawM;
+  drawM();
+  function drawM(){
+    const r=$('#mFilterRole').value,s=$('#mFilterStatus').value;
+    const list=members.filter(m=>(!r||m.role===r)&&(!s||m.status===s));
+    $('#mBody').innerHTML=list.length?list.map(m=>`<tr>
+      <td><b>${m.name}</b></td><td class="mono">${m.phone}</td><td>${m.role}</td>
+      <td class="mono">¥${fmt(m.shares)}</td><td>${m.join}</td><td>${statusTag(m.status)}</td>
+      <td><div class="row-actions"><span class="icon-btn" onclick="editMember('${m.id}')">✎</span>
+      <span class="icon-btn" onclick="delMember('${m.id}')">🗑</span></div></td></tr>`).join('')
+      :`<tr><td colspan="7" class="empty">无匹配社员</td></tr>`;
+  }
+  window.drawM=drawM;
+}
+function addMember(){openModal('新增社员',modalForm([
+  field('姓名','name','text',{required:true}),field('电话','phone','text',{required:true}),
+  field('角色','role','select',{options:['理事长','监事','社员'],val:'社员'}),
+  field('出资额(元)','shares','number',{val:5000}),field('入社日期','join','date',{val:'2026-01-01'}),
+  field('状态','status','select',{options:['在职','退社'],val:'在职'})
+]),'member');$('#modalSave').onclick=()=>{const o=readForm();if(!o.name||!o.phone)return toast('请填写姓名与电话');
+  o.shares=+o.shares||0;members.push({id:uid(),...o});save('members',members);closeModal();renderMembers();toast('已新增社员');};}
+function editMember(id){const m=members.find(x=>x.id===id);if(!m)return;
+  openModal('编辑社员',modalForm([
+    field('姓名','name','text',{val:m.name,required:true}),field('电话','phone','text',{val:m.phone,required:true}),
+    field('角色','role','select',{options:['理事长','监事','社员'],val:m.role}),
+    field('出资额(元)','shares','number',{val:m.shares}),field('入社日期','join','date',{val:m.join}),
+    field('状态','status','select',{options:['在职','退社'],val:m.status})
+  ]),'member');$('#modalSave').onclick=()=>{const o=readForm();Object.assign(m,o);m.shares=+m.shares||0;save('members',members);closeModal();renderMembers();toast('已保存');};}
+function delMember(id){if(!confirm('确认删除该社员？'))return;members=members.filter(x=>x.id!==id);save('members',members);renderMembers();toast('已删除');}
+
+/* ============ LANDS ============ */
+function renderLands(){
+  const v=$('#view-lands');
+  v.innerHTML=`
+  <div class="panel">
+    <div class="row spread"><div><h3>🗺️ 地块台账</h3><div class="ph-sub">总面积 ${sum(lands,l=>l.area)} 亩 · ${lands.length} 个地块</div></div>
+      <button class="btn primary" onclick="addLand()">＋ 新增地块</button></div>
+    <div class="filters">
+      <select id="lFilterCounty"><option value="">全部县域</option>${[...new Set(lands.map(l=>l.county))].map(c=>`<option>${c}</option>`).join('')}</select>
+      <select id="lFilterCrop"><option value="">全部作物</option>${[...new Set(lands.map(l=>l.crop))].map(c=>`<option>${c}</option>`).join('')}</select>
+    </div>
+    <div class="table-wrap"><table><thead>${tableHeader(['地块名称','面积(亩)','县域','作物','负责人','状态','操作'])}</thead>
+      <tbody id="lBody"></tbody></table></div>
+  </div>`;
+  $('#lFilterCounty').onchange=drawL;$('#lFilterCrop').onchange=drawL;
+  function drawL(){
+    const c=$('#lFilterCounty').value,cr=$('#lFilterCrop').value;
+    const list=lands.filter(l=>(!c||l.county===c)&&(!cr||l.crop===cr));
+    $('#lBody').innerHTML=list.length?list.map(l=>`<tr>
+      <td><b>${l.name}</b></td><td class="mono">${l.area}</td><td>${l.county}</td><td>${l.crop}</td>
+      <td>${l.owner}</td><td>${statusTag(l.status)}</td>
+      <td><div class="row-actions"><span class="icon-btn" onclick="editLand('${l.id}')">✎</span>
+      <span class="icon-btn" onclick="delLand('${l.id}')">🗑</span></div></td></tr>`).join('')
+      :`<tr><td colspan="7" class="empty">无匹配地块</td></tr>`;
+  }
+  drawL();
+}
+function addLand(){openModal('新增地块',modalForm([
+  field('地块名称','name','text',{required:true}),field('面积(亩)','area','number',{val:50,required:true}),
+  field('县域','county','text',{val:'临沭县',required:true}),field('作物','crop','text',{val:'小麦',required:true}),
+  field('负责人','owner','text',{val:'张建国'}),field('状态','status','select',{options:['种植中','休耕','养殖中'],val:'种植中'})
+]),'land');$('#modalSave').onclick=()=>{const o=readForm();if(!o.name)return toast('请填写地块名称');
+  o.area=+o.area||0;lands.push({id:uid(),...o});save('lands',lands);closeModal();renderLands();toast('已新增地块');};}
+function editLand(id){const l=lands.find(x=>x.id===id);if(!l)return;
+  openModal('编辑地块',modalForm([
+    field('地块名称','name','text',{val:l.name,required:true}),field('面积(亩)','area','number',{val:l.area}),
+    field('县域','county','text',{val:l.county}),field('作物','crop','text',{val:l.crop}),
+    field('负责人','owner','text',{val:l.owner}),field('状态','status','select',{options:['种植中','休耕','养殖中'],val:l.status})
+  ]),'land');$('#modalSave').onclick=()=>{const o=readForm();Object.assign(l,o);l.area=+l.area||0;save('lands',lands);closeModal();renderLands();toast('已保存');};}
+function delLand(id){if(!confirm('确认删除该地块？'))return;lands=lands.filter(x=>x.id!==id);save('lands',lands);renderLands();toast('已删除');}
+
+/* ============ INVENTORY ============ */
+function renderInventory(){
+  const v=$('#view-inventory');
+  v.innerHTML=`
+  <div class="panel">
+    <div class="row spread"><div><h3>📦 农资库存</h3><div class="ph-sub">${inventory.filter(i=>i.qty<=i.threshold).length} 项低于预警阈值</div></div>
+      <button class="btn primary" onclick="addInv()">＋ 入库登记</button></div>
+    <div class="table-wrap"><table><thead>${tableHeader(['物资名称','类别','库存量','单位','预警阈值','状态','操作'])}</thead>
+      <tbody id="iBody"></tbody></table></div>
+  </div>`;
+  $('#iBody').innerHTML=inventory.map(i=>{const low=i.qty<=i.threshold;return `<tr>
+    <td><b>${i.name}</b></td><td>${i.cat}</td><td class="mono">${i.qty}</td><td>${i.unit}</td>
+    <td class="mono">${i.threshold}</td><td>${low?'<span class="tag r">需补货</span>':'<span class="tag g">充足</span>'}</td>
+    <td><div class="row-actions"><span class="icon-btn" onclick="editInv('${i.id}')">✎</span>
+    <span class="icon-btn" onclick="delInv('${i.id}')">🗑</span></div></td></tr>`;}).join('')
+    ||`<tr><td colspan="7" class="empty">暂无库存记录</td></tr>`;
+}
+function addInv(){openModal('入库登记',modalForm([
+  field('物资名称','name','text',{required:true}),field('类别','cat','select',{options:['种子','化肥','农药','资材'],val:'化肥'}),
+  field('库存量','qty','number',{val:0,required:true}),field('单位','unit','text',{val:'吨'}),
+  field('预警阈值','threshold','number',{val:1})
+]),'inv');$('#modalSave').onclick=()=>{const o=readForm();if(!o.name)return toast('请填写名称');
+  o.qty=+o.qty||0;o.threshold=+o.threshold||0;inventory.push({id:uid(),...o});save('inventory',inventory);closeModal();renderInventory();toast('已入库');};}
+function editInv(id){const i=inventory.find(x=>x.id===id);if(!i)return;
+  openModal('编辑库存',modalForm([
+    field('物资名称','name','text',{val:i.name,required:true}),field('类别','cat','select',{options:['种子','化肥','农药','资材'],val:i.cat}),
+    field('库存量','qty','number',{val:i.qty}),field('单位','unit','text',{val:i.unit}),
+    field('预警阈值','threshold','number',{val:i.threshold})
+  ]),'inv');$('#modalSave').onclick=()=>{const o=readForm();Object.assign(i,o);i.qty=+i.qty||0;i.threshold=+i.threshold||0;save('inventory',inventory);closeModal();renderInventory();toast('已保存');};}
+function delInv(id){if(!confirm('确认删除？'))return;inventory=inventory.filter(x=>x.id!==id);save('inventory',inventory);renderInventory();toast('已删除');}
+
+/* ============ PROCURE ============ */
+function renderProcure(){
+  const v=$('#view-procure');
+  v.innerHTML=`
+  <div class="panel">
+    <div class="row spread"><div><h3>🚚 采购单</h3><div class="ph-sub">本年采购支出 ¥${fmt(Math.round(sum(procure,p=>p.amount)))}</div></div>
+      <button class="btn primary" onclick="addPro()">＋ 新增采购</button></div>
+    <div class="filters"><select id="pFilterStatus"><option value="">全部状态</option><option>已入库</option><option>待付款</option></select></div>
+    <div class="table-wrap"><table><thead>${tableHeader(['供应商','物资','数量','单位','金额(元)','日期','状态','操作'])}</thead>
+      <tbody id="pBody"></tbody></table></div>
+  </div>`;
+  $('#pFilterStatus').onchange=drawP;
+  function drawP(){const s=$('#pFilterStatus').value;const list=procure.filter(p=>!s||p.status===s);
+    $('#pBody').innerHTML=list.length?list.map(p=>`<tr>
+      <td><b>${p.supplier}</b></td><td>${p.item}</td><td class="mono">${p.qty}</td><td>${p.unit}</td>
+      <td class="mono">¥${fmt(p.amount)}</td><td>${p.date}</td><td>${statusTag(p.status)}</td>
+      <td><div class="row-actions"><span class="icon-btn" onclick="editPro('${p.id}')">✎</span>
+      <span class="icon-btn" onclick="delPro('${p.id}')">🗑</span></div></td></tr>`).join('')
+      :`<tr><td colspan="8" class="empty">无采购记录</td></tr>`;}
+  drawP();
+}
+function addPro(){openModal('新增采购',modalForm([
+  field('供应商','supplier','text',{required:true}),field('物资','item','text',{required:true}),
+  field('数量','qty','number',{val:1}),field('单位','unit','text',{val:'吨'}),
+  field('金额(元)','amount','number',{val:0}),field('日期','date','date',{val:'2026-01-01'}),
+  field('状态','status','select',{options:['已入库','待付款'],val:'已入库'})
+]),'pro');$('#modalSave').onclick=()=>{const o=readForm();if(!o.supplier||!o.item)return toast('请填写供应商与物资');
+  o.qty=+o.qty||0;o.amount=+o.amount||0;procure.push({id:uid(),...o});save('procure',procure);closeModal();renderProcure();toast('已新增采购');};}
+function editPro(id){const p=procure.find(x=>x.id===id);if(!p)return;
+  openModal('编辑采购',modalForm([
+    field('供应商','supplier','text',{val:p.supplier,required:true}),field('物资','item','text',{val:p.item,required:true}),
+    field('数量','qty','number',{val:p.qty}),field('单位','unit','text',{val:p.unit}),
+    field('金额(元)','amount','number',{val:p.amount}),field('日期','date','date',{val:p.date}),
+    field('状态','status','select',{options:['已入库','待付款'],val:p.status})
+  ]),'pro');$('#modalSave').onclick=()=>{const o=readForm();Object.assign(p,o);p.qty=+p.qty||0;p.amount=+p.amount||0;save('procure',procure);closeModal();renderProcure();toast('已保存');};}
+function delPro(id){if(!confirm('确认删除？'))return;procure=procure.filter(x=>x.id!==id);save('procure',procure);renderProcure();toast('已删除');}
+
+/* ============ SALES ============ */
+function renderSales(){
+  const v=$('#view-sales');
+  v.innerHTML=`
+  <div class="panel">
+    <div class="row spread"><div><h3>💰 销售订单</h3><div class="ph-sub">本年销售额 ¥${fmt(Math.round(sum(sales,s=>s.qty*s.price)))}</div></div>
+      <button class="btn primary" onclick="addSale()">＋ 新增订单</button></div>
+    <div class="filters"><select id="sFilterStatus"><option value="">全部状态</option><option>已完成</option><option>待发货</option></select></div>
+    <div class="table-wrap"><table><thead>${tableHeader(['客户','产品','数量','单位','单价(元)','金额(元)','日期','状态','操作'])}</thead>
+      <tbody id="sBody"></tbody></table></div>
+  </div>`;
+  $('#sFilterStatus').onchange=drawS;
+  function drawS(){const st=$('#sFilterStatus').value;const list=sales.filter(s=>!st||s.status===st);
+    $('#sBody').innerHTML=list.length?list.map(s=>{s.amount=s.qty*s.price;return `<tr>
+      <td><b>${s.customer}</b></td><td>${s.product}</td><td class="mono">${s.qty}</td><td>${s.unit}</td>
+      <td class="mono">${fmt(s.price)}</td><td class="mono">¥${fmt(Math.round(s.amount))}</td><td>${s.date}</td>
+      <td>${statusTag(s.status)}</td>
+      <td><div class="row-actions"><span class="icon-btn" onclick="editSale('${s.id}')">✎</span>
+      <span class="icon-btn" onclick="delSale('${s.id}')">🗑</span></div></td></tr>`;}).join('')
+      :`<tr><td colspan="9" class="empty">无销售记录</td></tr>`;}
+  drawS();
+}
+function addSale(){openModal('新增订单',modalForm([
+  field('客户','customer','text',{required:true}),field('产品','product','text',{required:true}),
+  field('数量','qty','number',{val:1}),field('单位','unit','text',{val:'吨'}),
+  field('单价(元)','price','number',{val:0}),field('日期','date','date',{val:'2026-01-01'}),
+  field('状态','status','select',{options:['已完成','待发货'],val:'已完成'})
+]),'sale');$('#modalSave').onclick=()=>{const o=readForm();if(!o.customer||!o.product)return toast('请填写客户与产品');
+  o.qty=+o.qty||0;o.price=+o.price||0;o.amount=o.qty*o.price;sales.push({id:uid(),...o});save('sales',sales);closeModal();renderSales();toast('已新增订单');};}
+function editSale(id){const s=sales.find(x=>x.id===id);if(!s)return;
+  openModal('编辑订单',modalForm([
+    field('客户','customer','text',{val:s.customer,required:true}),field('产品','product','text',{val:s.product,required:true}),
+    field('数量','qty','number',{val:s.qty}),field('单位','unit','text',{val:s.unit}),
+    field('单价(元)','price','number',{val:s.price}),field('日期','date','date',{val:s.date}),
+    field('状态','status','select',{options:['已完成','待发货'],val:s.status})
+  ]),'sale');$('#modalSave').onclick=()=>{const o=readForm();Object.assign(s,o);s.qty=+s.qty||0;s.price=+s.price||0;s.amount=s.qty*s.price;save('sales',sales);closeModal();renderSales();toast('已保存');};}
+function delSale(id){if(!confirm('确认删除？'))return;sales=sales.filter(x=>x.id!==id);save('sales',sales);renderSales();toast('已删除');}
+
+/* ============ FINANCE ============ */
+function renderFinance(){
+  const income=sum(sales,s=>s.qty*s.price), expense=sum(procure,p=>p.amount);
+  const profit=income-expense;
+  const reserve=Math.round(profit*0.20); // 公积金20%
+  const distributable=profit-reserve;
+  const totalShares=sum(members.filter(m=>m.status==='在职'),m=>m.shares);
+  const v=$('#view-finance');
+  v.innerHTML=`
+  <div class="stat-grid">
+    <div class="stat"><div class="lab">销售收入</div><div class="val up">¥${fmt(Math.round(income))}</div></div>
+    <div class="stat"><div class="lab">采购支出</div><div class="val down">¥${fmt(Math.round(expense))}</div></div>
+    <div class="stat"><div class="lab">可分配盈余</div><div class="val">¥${fmt(Math.round(distributable))}</div></div>
+    <div class="stat"><div class="lab">公积金(20%)</div><div class="val" style="color:var(--amber)">¥${fmt(reserve)}</div></div>
+  </div>
+  <div class="charts-2">
+    <div class="panel">
+      <h3>🧮 盈余分配结构</h3>
+      <div class="ph-sub">按出资比例向社员分红（示例）</div>
+      <div class="chart-box"><canvas id="finPie"></canvas></div>
+    </div>
+    <div class="panel">
+      <h3>📑 分红明细测算</h3>
+      <div class="ph-sub">在职社员按出资比例分配可分配盈余</div>
+      <div class="div-box" id="divList"></div>
+    </div>
+  </div>
+  <div class="panel">
+    <h3>📋 收支流水</h3>
+    <div class="ph-sub">采购（支出）与销售（收入）合并流水</div>
+    <div class="table-wrap"><table><thead>${tableHeader(['日期','类别','对象','摘要','金额','方向'])}</thead>
+      <tbody id="finFlow"></tbody></table></div>
+  </div>`;
+  drawChart('finPie',{type:'doughnut',data:{labels:['社员分红','公积金留存'],
+    datasets:[{data:[Math.round(distributable),reserve],backgroundColor:['#2ea043','#d29922']}]},
+    options:{...chartOpts(true),cutout:'60%'}});
+  const active=members.filter(m=>m.status==='在职');
+  $('#divList').innerHTML=active.map(m=>{const amt=Math.round(distributable*(m.shares/totalShares));
+    return `<div class="div-row"><span>${m.name} <span class="tag b">${m.role}</span> · 出资¥${fmt(m.shares)}</span>
+      <span class="amt">¥${fmt(amt)}</span></div>`;}).join('')
+    +`<div class="div-row" style="border-top:1px solid var(--border);margin-top:4px;font-weight:700"><span>合计分红</span><span class="amt">¥${fmt(Math.round(distributable))}</span></div>`;
+  const flow=[...procure.map(p=>({d:p.date,c:'采购',o:p.supplier,s:p.item,a:p.amount,dir:'out'})),
+              ...sales.map(s=>({d:s.date,c:'销售',o:s.customer,s:s.product,a:s.qty*s.price,dir:'in'}))];
+  flow.sort((a,b)=>b.d.localeCompare(a.d));
+  $('#finFlow').innerHTML=flow.map(r=>`<tr><td>${r.d}</td><td><span class="tag ${r.dir==='in'?'g':'r'}">${r.c}</span></td>
+    <td>${r.o}</td><td>${r.s}</td><td class="mono">${r.dir==='in'?'+':'-'}¥${fmt(Math.round(r.a))}</td>
+    <td>${r.dir==='in'?'<span class="up">收入</span>':'<span class="down">支出</span>'}</td></tr>`).join('');
+}
+
+/* ============ Init ============ */
+navigate('dashboard');
+</script>
+</body>
+</html>
